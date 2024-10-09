@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Trang chính</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+    />
+    <link rel="stylesheet" href="style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"
+    />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Chào mừng đến với ứng dụng của chúng tôi!</h1>
+
+      <!-- Form Upload File -->
+      <form
+        id="uploadForm"
+        action="/api/transactions/upload"
+        method="post"
+        enctype="multipart/form-data"
+      >
+        <label for="file">Chọn file Excel để upload:</label>
+        <input type="file" name="file" id="file" accept=".xlsx" required />
+        <button type="submit"><i class="fas fa-upload"></i> Upload</button>
+      </form>
+
+      <!-- Form Query Transactions -->
+      <form id="queryForm" action="/api/transactions/query" method="get">
+        <label for="start_time">Thời gian bắt đầu:</label>
+        <input type="text" name="start_time" id="start_time" required />
+        <label for="end_time">Thời gian kết thúc:</label>
+        <input type="text" name="end_time" id="end_time" required />
+        <button type="submit"><i class="fas fa-search"></i> Truy vấn</button>
+      </form>
+
+      <div class="footer">
+        <p>&copy; 2023 Ứng dụng của chúng tôi. Tất cả quyền được bảo lưu.</p>
+      </div>
+    </div>
+
+    <script>
+      // Hàm định dạng số tiền
+      function formatCurrency(amount) {
+        return amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + " VND";
+      }
+
+      // Khởi tạo Flatpickr cho các input thời gian
+      flatpickr("#start_time", {
+        enableTime: true,
+        noCalendar: true,
+        dateFormat: "H:i",
+        time_24hr: true,
+        minuteIncrement: 1,
+      });
+
+      flatpickr("#end_time", {
+        enableTime: true,
+        noCalendar: true,
+        dateFormat: "H:i",
+        time_24hr: true,
+        minuteIncrement: 1,
+      });
+
+      // Xử lý sự kiện submit cho form upload
+      document
+        .getElementById("uploadForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault(); // Ngăn chặn hành vi mặc định của form
+          const formData = new FormData(this);
+
+          fetch(this.action, {
+            method: this.method,
+            body: formData,
+          })
+            .then((response) => response.json())
+            .then((data) => {
+              Swal.fire({
+                icon: "success",
+                title: "Thành công!",
+                text: data.message,
+              });
+            })
+            .catch((error) => {
+              Swal.fire({
+                icon: "error",
+                title: "Lỗi!",
+                text: error.message,
+              });
+            });
+        });
+
+      // Xử lý sự kiện submit cho form query
+      document
+        .getElementById("queryForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault(); // Ngăn chặn hành vi mặc định của form
+          const queryString = new URLSearchParams(
+            new FormData(this)
+          ).toString();
+
+          fetch(this.action + "?" + queryString)
+            .then((response) => response.json())
+            .then((data) => {
+              // Kiểm tra xem total_amount có tồn tại không
+              if (data.total_amount !== undefined) {
+                const formattedAmount = formatCurrency(data.total_amount);
+                Swal.fire({
+                  icon: "info",
+                  title: "Kết quả truy vấn",
+                  text: `Tổng số tiền: ${formattedAmount}`,
+                });
+              } else {
+                Swal.fire({
+                  icon: "error",
+                  title: "Lỗi!",
+                  text: "Không có dữ liệu tổng số tiền.",
+                });
+              }
+            })
+            .catch((error) => {
+              Swal.fire({
+                icon: "error",
+                title: "Lỗi!",
+                text: error.message,
+              });
+            });
+        });
+    </script>
+  </body>
+</html>
